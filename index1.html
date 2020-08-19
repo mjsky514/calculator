@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+</html> <html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="cid:css-cbd16bf4-5827-43ba-bba3-9249e3db8cdb@mhtml.blink">
+    
+    <title>Posung Calculator</title>
+    <link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
+    <style>
+        body {
+            background-color:azure;
+        }
+        .container{
+            width: 400px;
+            margin:auto;
+        }
+        
+        /* .row{
+            display: inline-flex;
+        } */
+        .result {
+            height: 1em;
+            font-family: 'Lobster', cursive;
+            font-size: 2.5rem;
+            background-color: white;
+            border-radius: 10px;
+            text-align:right;
+            padding: 12px 30px;
+        }
+        .btn {
+            border: 0px;
+            text-decoration: none;
+            font-size: 2rem;
+            color: white;
+            padding: 10px 30px 10px 30px;
+            margin: 10px;
+            display: inline-block;
+            border-radius: 10px;
+            transition: all 0.1s;
+            text-shadow: 0px 0px rgba(0, 0, 0, 0.44);
+            font-family: 'Lobster', cursive;
+        }
+        
+        .btn:active {
+            transform: translateY(3px);
+        }
+        .btn.blue {
+            background-color: #140c67;
+            border-bottom: 5px solid #071839;
+            
+        }
+        .btn.blue:active {
+            border-bottom: 2px solid #2955a8;
+        }
+        .btn.red {
+            background-color: #ef0505;
+            border-bottom: 5px solid #c30a0a;
+            
+        }
+        .btn.red:active {
+            border-bottom: 2px solid #c30a0a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="result"><div id="result" type="text">0</div>
+        </div>
+        <div class="row">
+            <button class="btn blue" onclick="attendNum('1')">1</button>
+            <button class="btn blue"onclick="attendNum('2')">2</button>
+            <button class="btn blue"onclick="attendNum('3')">3</button>
+            <button class="btn red"onclick="attendText('+')">+</button>
+        </div>
+        <div class="row">
+            <button class="btn blue"onclick="attendNum('4')">4</button>
+            <button class="btn blue"onclick="attendNum('5')">5</button>
+            <button class="btn blue"onclick="attendNum('6')">6</button>
+            <button class="btn red"onclick="attendText('–')">–</button>
+        </div>
+        <div class="row">
+            <button class="btn blue"onclick="attendNum('7')">7</button>
+            <button class="btn blue"onclick="attendNum('8')">8</button>
+            <button class="btn blue"onclick="attendNum('9')">9</button>
+            <button class="btn red"onclick="attendText('×')">×</button>
+        </div>
+        <div class="row">
+            <button class="btn red"onclick="clearResult()">C</button>
+            <button class="btn blue"onclick="attendNum('0')">0</button>
+            <button class="btn blue" onclick="sendMessage()">=</button>
+            <button class="btn red"onclick="attendText('÷')">÷</button>
+        </div>
+        <!-- 출력 area -->
+        <textarea id="messageTextArea" rows="10" cols="50"></textarea>
+    </div>
+<script type="text/javascript">
+//기호 중복 입력 금지
+var globalSymbolStack = false;
+
+function attendNum(text){
+    var result = document.getElementById("result");
+    if(result.innerHTML == "0"){
+        result.innerHTML = text;
+    } else {
+        result.innerHTML += text;
+    }
+    globalSymbolStack = false;
+}
+function attendText(text){
+    var result = document.getElementById("result");
+    if(globalSymbolStack==true){
+        alert("기호 입력 중복")
+    } else {
+        result.innerHTML += text;
+    }
+    globalSymbolStack= true;
+}
+function clearResult(){
+    var result = document.getElementById("result");
+    result.innerHTML = "0";
+}
+
+// 웹 서버를 접속한다.
+var webSocket = new WebSocket("ws://localhost:9998");
+// 웹 서버와의 통신을 주고 받은 결과를 출력할 오브젝트를 가져옵니다.
+var messageTextArea = document.getElementById("messageTextArea");
+// 소켓 접속이 되면 호출되는 함수
+webSocket.onopen = function(message){
+messageTextArea.value += "Server connect...\n";
+};
+// 소켓 접속이 끝나면 호출되는 함수
+webSocket.onclose = function(message){
+messageTextArea.value += "Server Disconnect...\n";
+};
+// 소켓 통신 중에 에러가 발생되면 호출되는 함수
+webSocket.onerror = function(message){
+messageTextArea.value += "error...\n";
+};
+// 소켓 서버로 부터 메시지가 오면 호출되는 함수.
+webSocket.onmessage = function(message){
+// 출력 area에 메시지를 표시한다.
+messageTextArea.value += "Recieve From Server => "+message.data+"\n";
+var result = document.getElementById("result");
+result.innerHTML = message.data
+};
+// 서버로 메시지를 전송하는 함수
+function sendMessage(){
+var message = document.getElementById("result");
+//마지막이 기호로 끝나는지 확인
+if(globalSymbolStack == true){
+    message.innerHTML = message.innerHTML.slice(0,-1);
+    globalSymbolStack = false;
+}
+
+messageTextArea.value += "Send to Server => "+message.innerHTML+"\n";
+//웹소켓으로 textMessage객체의 값을 보낸다.
+webSocket.send(message.innerHTML);
+//textMessage객체의 값 초기화
+// message.innerHTML = "0";
+}
+function disconnect(){
+webSocket.close();
+}
+</script>
+</body></html>
